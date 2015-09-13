@@ -1,0 +1,67 @@
+  b2g main()  b2g/app/B2GLoader.cpp
+   |
+   |- LoadStaticData
+   |
+   |- RunProcesses
+       |
+       |- fork
+       |
+       |- XRE_ProcLoaderServiceRun  child
+       |
+       |- b2g_main                  parent
+           |
+           |- XPCOMGlueLoadXULFunctions
+           |
+           |- do_main
+               |
+               |-mozilla::StartBootAnimation
+               |
+               |-XRE_main
+                  |-XREMain main
+                      nsXREDirProvider::nsXREDirProvider  // construct
+                    main.XRE_main
+                     |-XREMain::XRE_mainInit
+                     |   mDirProvider.Initialize    // nsXREDirProvider::Initialize
+                     |-XREMain::XRE_mainStartup
+                     |-mScopedXPCom = new ScopedXPCOMStartup()
+                     |-mScopedXPCom->Initialize()
+                     |   NS_InitXPCOM2
+                     |     UniquePtr<BrowserProcessSubThread> ioThread = MakeUnique<BrowserProcessSubThread>(BrowserProcessSubThread::IO)
+                     |     ioThread->StartWithOptions               // for ipc
+                     |
+                     |     nsComponentManagerImpl::Init             // for xpcom
+                     |       nsComponentManagerImpl::RereadChromeManifests
+                     |         RegisterManifest
+                     |           DoRegisterManifest
+                     |             ParseManifest
+                     |               nsComponentManagerImpl::ManifestManifest
+                     |
+                     |-XREMain::XRE_mainRun
+                         startupNotifier -> Observe(nullptr, APPSTARTUP_TOPIC, nullptr) "app-startup"
+                           // this will notify all category "app-startup".
+                           // all xpcom components which wish to start on initialization
+                           // should be added to this category.
+                         nsCommandLine::Run         // toolkit/components/commandlines/nsCommandLine.cpp
+                           nsCommandLine::EnumerateHandlers
+                             EnumRun                // toolkit/components/commandlines/nsICommandLineHandler.idl
+                             "@mozilla.org/toolkit/console-clh;1"
+                               toolkit/components/console/jsconsole-clhandler.js
+                             "@mozilla.org/marionette;1"
+                               testing/marionette/components/marionettecomponent.js
+                             "@mozilla.org/commandlinehandler/general-startup;1?type=b2gbootstrap"
+                               b2g/components/Bootstraper.jsm
+                             "@mozilla.org/toolkit/default-clh;1"
+                               toolkit/components/nsDefaultCLH.js    // toolkit.defaultChromeURI: b2g.js configure
+                                                                     // chrome://b2g/content/shell.html
+                                 var chromeURI = prefs.getCharPref("toolkit.defaultChromeURI");
+                                 Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(nsIWindowWatcher).openWindow
+                                   nsWindowWatcher::OpenWindow
+                                     nsWindowWatcher::OpenWindowInternal
+                                       nsAppStartup::CreateChromeWindow2
+                                         nsAppShellService::CreateTopLevelWindow
+                                           nsAppShellService::JustCreateTopWindow
+                                             nsWebShellWindow::Initialize   // window->Initialize
+                                               mWindow = do_CreateInstance(kWindowCID, &rv);            // nsWindow
+                                               mDocShell = do_CreateInstance("@mozilla.org/docshell;1") // nsDocShell
+                         appStartup->Run() // MessageLoop
+                         "browser-ui-startup-complete"  StopBootAnimation() // from shell.js

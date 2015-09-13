@@ -1,0 +1,31 @@
+  // somewhere add remote iframe
+  AsyncFrameInit::Run
+    nsSubDocumentFrame::ShowViewer
+      nsFrameLoader::Show
+        nsFrameLoader::ShowRemoteFrame
+          nsFrameLoader::TryRemoteBrowser
+            mozilla::dom::ContentParent::CreateBrowserOrApp
+              mozilla::dom::ContentParent::GetNewOrUsedBrowserProcess
+                mozilla::dom::ContentParent::ContentParent    // dom/ipc/ContentParent.cpp
+                  mSubprocess = new GeckoChildProcessHost(GeckoProcessType_Content, privs)
+                  mSubprocess->LaunchAndWaitForProcessHandle
+                  GeckoChildProcessHost::LaunchAndWaitForProcessHandle
+                    ioLoop->PostTask  &GeckoChildProcessHost::RunPerformAsyncLaunch
+
+  ^
+  | post runnable
+  v
+
+  GeckoChildProcessHost::RunPerformAsyncLaunch
+    GeckoChildProcessHost::PerformAsyncLaunch
+      GeckoChildProcessHost::PerformAsyncLaunchInternal
+        base::LaunchApp    // ipc/chromium/src/base/process_util_linux.cc
+          fork()
+  ^
+  | parent-child
+  v
+
+  plugin-container main()
+    content_process_main   ipc/contentproc/plugin-container.cpp
+      XRE_InitChildProcess   toolkit/xre/nsEmbedFunctions.cpp
+        MessageLoop::Run     ipc/chromium/src/base/message_loop.cc

@@ -1,0 +1,8 @@
+PuppetWidget::Paint
+  nsView::WillPaintWindow
+    nsViewManager::WillPaintWindow
+      nsViewManager::ProcessPendingUpdates
+       nsViewManager::ProcessPendingUpdatesForView
+         nsViewManager::ProcessPendingUpdatesPaint
+           PresShell::Paint
+             // same as Paint driven by RefreshDriver

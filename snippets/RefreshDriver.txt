@@ -1,0 +1,44 @@
+   mozilla::layout::VsyncChild::RecvNotify
+     mozilla::VsyncRefreshDriverTimer::RefreshDriverVsyncObserver::NotifyVsync
+       mozilla::VsyncRefreshDriverTimer::RefreshDriverVsyncObserver::TickRefreshDriver
+         mozilla::RefreshDriverTimer::Tick
+           mozilla::RefreshDriverTimer::TickDriver
+             nsRefreshDriver::Tick
+               PresShell::FlushPendingNotifications               // reflow, then
+               nsViewManager::ProcessPendingUpdates               // paint
+                 nsViewManager::ProcessPendingUpdatesForView
+                   nsViewManager::ProcessPendingUpdatesPaint
+                     PresShell::Paint                                        // flags |= nsLayoutUtils::PAINT_WIDGET_LAYERS
+                       nsLayoutUtils::PaintFrame                             // flags |= nsDisplayList::PAINT_USE_WIDGET_LAYERS
+                         nsIFrame::BuildDisplayListForStackingContext
+                           ViewportFrame::BuildDisplayList                   // viewportframe
+                             nsIFrame::BuildDisplayListForChild
+                               mozilla::ScrollFrameHelper::BuildDisplayList  // ScrollFrame
+                                 nsIFrame::BuildDisplayListForChild
+                                   nsCanvasFrame::BuildDisplayList           // CanvasFrame
+                                     nsIFrame::BuildDisplayListForChild
+                         TimeStamp paintStart = TimeStamp::Now()
+                         nsDisplayList::PaintRoot
+                           if (aFlags & PAINT_USE_WIDGET_LAYERS)                         // see flags above
+                             layerManager = window->GetLayerManager(&allowRetaining)
+                           mozilla::layers::ClientLayerManager::EndTransaction           // enter gfx/layers
+                             mozilla::layers::ClientLayerManager::EndTransactionInternal
+                               mozilla::layers::ClientContainerLayer::RenderLayer
+                                 mozilla::layers::ClientLayer::RenderLayerWithReadback
+                                   mozilla::layers::ClientTiledPaintedLayer::RenderLayer
+                                     mozilla::layers::ClientTiledPaintedLayer::RenderHighPrecision
+                                       mozilla::layers::ClientSingleTiledLayerBuffer::PaintThebes
+                                         mozilla::FrameLayerBuilder::DrawPaintedLayer
+                                           mozilla::FrameLayerBuilder::PaintItems
+                                             nsDisplayImage::Paint
+                                               nsImageFrame::PaintImage
+                                                 aRenderingContext.GetDrawTarget         // DrawTarget
+                                       mozilla::layers::ClientMultiTiledLayerBuffer::PaintThebes
+                                         mozilla::layers::ClientMultiTiledLayerBuffer::Update
+                                           mozilla::layers::ClientMultiTiledLayerBuffer::ValidateTile
+                                             mozilla::layers::GrallocTextureClientOGL::BorrowDrawTarget
+                                               gfxPlatform::CreateDrawTargetForData
+                                                 mozilla::gfx::Factory::CreateDrawTargetForData
+                                           mozilla::FrameLayerBuilder::DrawPaintedLayer
+                                             mozilla::FrameLayerBuilder::PaintItems
+                         Telemetry::AccumulateTimeDelta(Telemetry::PAINT_RASTERIZE_TIME, paintStart)

@@ -1,0 +1,16 @@
+     nsThreadPool::Run                     StreamTrans thread
+       nsAStreamCopier::Run
+         nsAStreamCopier::Process
+           nsStreamCopierOB::DoCopy
+             nsPipeOutputStream::WriteSegments
+               nsPipe::AdvanceWriteCursor
+                 nsPipeEvents events
+                 // notify input stream that pipe now contains additional data
+                 mInputList[i]->OnInputReadable
+                   events.mInputStream = nsPipeInputStream.this
+                   events.mInputCallback = NS_NewInputStreamReadyEvent(,) <---------
+                 nsPipeEvents::~nsPipeEvents
+                   mInputCallback->OnInputStreamReady(mInputStream)
+                   nsInputStreamReadyEvent::OnInputStreamReady
+                     mTarget->Dispatch    // back to main thread
+                                          // see nsInputStreamReadyEvent::Run

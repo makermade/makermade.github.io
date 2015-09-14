@@ -1,0 +1,47 @@
+   nsWindowWatcher::OpenWindowInternal          main thread
+     nsWindowWatcher::URIfromURL
+       NS_NewURI
+         nsIOService::NewURI
+           xxxProtocolHandler -> NewURI
+     nsDocShell::LoadURI
+       nsDocShell::InternalLoad
+         nsDocShell::DoURILoad
+           NS_NewChannelInternal                            // new channel
+             nsIOService::NewChannelFromURI2
+               nsIOService::NewChannelFromURIWithProxyFlags2
+                 xxxProtocolHandler -> NewChannel2
+                 // take chrome as an example
+                 nsChromeProtocolHandler::NewChannel2
+                   nsChromeRegistry::ConvertChromeURL
+                     GetBaseURIFromPackage
+
+                       nsChromeRegistryChrome::GetBaseURIFromPackage
+                       --- or ---
+                       nsChromeRegistryContent::GetBaseURIFromPackage
+
+           nsDocShell::DoChannelLoad                        // channel load
+             nsURILoader::OpenURI
+               nsURILoader::OpenChannel
+               channel->AsyncOpen                           // passed a nsIStreamListener
+               // take chrome omni.ja as an example
+               nsJARChannel::AsyncOpen                      // still in main thread
+                 nsJARChannel::ContinueAsyncOpen
+                   nsJARChannel::OpenLocalFile              // channel
+                     nsJARChannel::CreateJarInput
+                     NS_NewInputStreamPump                  // pump
+                     nsInputStreamPump::AsyncRead
+                       nonBlocking?
+                       yes:
+                         mAsyncStream = do_QueryInterface(mStream)
+                       no:
+                         CreateInputTransport
+                         OpenInputStream    wrapper
+                           NS_NewPipe2
+                           NS_AsyncCopy
+                             copier = new nsStreamCopierIB/nsStreamCopierOB
+                             copier->Start  dispatch to thread pool in nsStreamTransportService
+                         mAsyncStream = do_QueryInterface(wrapper, &rv)
+                       nsInputStreamPump::EnsureWaiting
+                         mAsyncStream->AsyncWait
+                         nsPipeInputStream::AsyncWait       // pipe stream
+                           NS_NewInputStreamReadyEvent ---------------------------------------->

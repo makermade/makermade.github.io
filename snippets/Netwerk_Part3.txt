@@ -1,0 +1,57 @@
+   nsInputStreamReadyEvent::Run              // main thread
+     nsInputStreamPump::OnInputStreamReady   // multi times, to drive the state machine
+       nsInputStreamPump::OnStateStart
+         nsJARChannel::OnStartRequest
+           nsDocumentOpenInfo::OnStartRequest
+           // see:
+           // https://developer.mozilla.org/en-US/docs/Document_Loading_-_From_Load_Start_to_Finding_a_Handler
+           // for how nsHtml5StreamListener is selected
+             nsDocumentOpenInfo::DispatchContent
+               nsDocumentOpenInfo::TryContentListener
+                 nsDSURIContentListener::DoContent
+                   nsDocShell::CreateContentViewer
+                     nsDocShell::NewContentViewerObj
+                       nsContentUtils::FindInternalContentViewer
+                         // see layout/build/nsContentDLF.h to understand this
+                         catMan->GetCategoryEntry("Gecko-Content-Viewers",
+                         DecoderTraits::IsSupportedInVideoDocument  video element
+                       nsContentDLF::CreateInstance
+                         nsContentDLF::CreateDocument
+                           nsCOMPtr<nsIDocument> doc = do_CreateInstance(aDocumentCID, &rv)
+                           doc->StartDocumentLoad
+                           nsHTMLDocument::StartDocumentLoad
+                             bool loadAsHtml5 = true;           // parser type
+                             loadAsHtml5 = false;  if xhtml
+                             loadAsHtml5 = false;  if "about:blank"
+                             true:
+                               mParser = nsHtml5Module::NewHtml5Parser();
+                             false:
+                               mParser = do_CreateInstance(kCParserCID, &rv);
+                             mParser->GetStreamListener()
+                             nsHtml5Module::Initialize(mParser, this, uri, docShell, aChannel)
+                               nsHtml5Parser::Initialize(       aDoc
+                                 mExecutor->Init                       // IMPORTANT nsHtml5DocumentBuilder know document now
+                                 nsHtml5DocumentBuilder::Init   aDoc   // this and aDoc are nsHTMLDocument
+                                   nsContentSink::Init          aDoc   // nsHtml5DocumentBuilder is a nsContentSink
+                     nsDocShell::Embed
+                       nsDocShell::SetupNewViewer
+                         nsDocumentViewer::Init                        // layout
+                           nsDocumentViewer::InitInternal
+                             CreatePresContext
+                               nsRootPresContext::nsRootPresContext
+                                 nsPresContext::nsPresContext          // nsPresContext
+                             nsDocumentViewer::InitPresentationStuff
+                               nsHTMLDocument::CreateShell
+                                 nsDocument::doCreateShell
+                                   PresShell::PresShell                // PresShell
+                                   PresShell::Init
+                                     mPresContext = aPresContext       // PresShell and nsPresContext
+                                     nsPresContext::SetShell           // know
+                                       mShell = aShell                 // each other
+       nsInputStreamPump::OnStateTransfer
+         nsJARChannel::OnDataAvailable
+           nsDocumentOpenInfo::OnDataAvailable
+             nsHtml5StreamListener::OnDataAvailable  // enter parser world now
+               nsHtml5StreamParser::OnDataAvailable
+                 new nsHtml5DataAvailable            // runnable
+                 mThread->Dispatch                   // dispatch to "HTML5 Parser"

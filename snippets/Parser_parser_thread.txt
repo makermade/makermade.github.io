@@ -1,0 +1,25 @@
+     nsHtml5DataAvailable::Run           // parser thread
+       nsHtml5StreamParser::DoDataAvailable
+         nsHtml5StreamParser::ParseAvailableData
+           nsHtml5TreeBuilder::StreamEnded()            // mStreamState == STREAM_ENDED
+             treeOp->Init(eTreeOpStreamEnded)
+           nsHtml5StreamParser::FlushTreeOpsAndDisarmTimer
+                                                        // flush to main?
+             mTreeBuilder->Flush()
+               mOpSink->MoveOpsFrom                     // mOpSink is nsHtml5TreeOpExecutor::GetStage()
+               nsHtml5TreeOpStage::MoveOpsFrom
+                 move to nsHtml5TreeOpStage::mOpQueue
+             NS_DispatchToMainThread(mExecutorFlusher)  // dispatch the nsHtml5ExecutorFlusher::Run to main
+           nsHtml5Tokenizer::tokenizeBuffer
+             nsHtml5Tokenizer::stateLoop<nsHtml5SilentPolicy>
+               nsHtml5Tokenizer::emitCurrentTagToken
+                 nsHtml5TreeBuilder::startTag
+                   nsHtml5TreeBuilder::appendToCurrentNodeAndPushHeadElement
+                     nsHtml5TreeBuilder::appendElement
+                       mOpQueue.AppendElement()         // op queue
+                   nsHtml5TreeBuilder::appendToCurrentNodeAndPushBodyElement
+                     nsHtml5TreeBuilder::appendToCurrentNodeAndPushElement
+                       nsHtml5TreeBuilder::push
+                         nsHtml5TreeBuilder::elementPushed
+                           if aName == nsHtml5Atoms::body           // body cause layout start
+                             treeOp->Init(eTreeOpStartLayout)

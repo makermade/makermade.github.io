@@ -1,0 +1,26 @@
+     nsHtml5ExecutorFlusher::Run         // main thread
+       nsHtml5TreeOpExecutor::RunFlushLoop
+         nsHtml5TreeOpStage::MoveOpsAndSpeculativeLoadsTo
+           move out of nsHtml5TreeOpStage::mOpQueue
+         nsHtml5TreeOperation::Perform(this     //"this" is: where to append the new element
+                                                // see nsHtml5Parser::Initialize how this bind
+           nsHtml5TreeOperation::CreateElement
+             NS_NewElement
+               NS_NewHTMLElement
+                 CreateHTMLElement
+                   NS_NewHTMLLinkElement
+                   NS_NewHTMLScriptElement      // macro NS_IMPL_NS_NEW_HTML_ELEMENT
+                   NS_NewHTMLBodyElement
+           nsHtml5TreeOperation::AppendToDocument
+             nsIDocument* doc = aBuilder->GetDocument() // aBuilder is "this" above
+             doc->AppendChildTo
+             nsINode::AppendChildTo
+               nsDocument::InsertChildAt
+                 nsINode::doInsertChildAt
+           nsHtml5TreeOpExecutor::DidBuildModel         // eTreeOpStreamEnded
+             nsHTMLDocument::EndLoad
+               nsDocument::EndLoad
+                 UnblockDOMContentLoaded
+                   DispatchContentLoadedEvents
+           nsHtml5TreeOpExecutor::StartLayout           // eTreeOpStartLayout
+             nsContentSink::StartLayout

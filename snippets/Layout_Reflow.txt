@@ -1,0 +1,21 @@
+     mozilla::RefreshDriverTimer::TickDriver     case #1, see PresShell::ScheduleReflow
+       nsRefreshDriver::Tick
+         PresShell::FlushPendingNotifications
+
+     nsDocument::DispatchContentLoadedEvents     case #2, see nsHtml5TreeOperation::Perform
+       nsDocument::UnblockOnload
+         nsDocument::DoUnblockOnload
+           nsLoadGroup::RemoveRequest
+             nsDocLoader::OnStopRequest
+               nsDocLoader::DocLoaderIsEmpty
+                 nsDocLoader::doStopDocumentLoad
+                   nsDocLoader::DoFireOnStateChange
+                     nsDocShell::OnStateChange
+                       nsDocShell::EndPageLoad
+                         nsDocumentViewer::LoadComplete
+                           PresShell::FlushPendingNotifications
+
+     PresShell::FlushPendingNotifications        can be called in many cases
+       PresShell::ProcessReflowCommands
+         PresShell::DoReflow
+           ViewportFrame::Reflow

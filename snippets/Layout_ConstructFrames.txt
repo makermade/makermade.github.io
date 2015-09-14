@@ -1,0 +1,26 @@
+   nsContentSink::StartLayout
+     check WaitForPendingSheets()   // check whether css load is pending
+     PresShell::Initialize
+       nsCSSFrameConstructor::ConstructRootFrame
+         ViewportFrame::Init
+           nsContainerFrame::Init
+       root = mDocument->GetRootElement()
+       nsCSSFrameConstructor::ContentInserted(nullptr, root,
+         nsCSSFrameConstructor::ContentRangeInserted
+           nsCSSFrameConstructor::ConstructDocElementFrame        // XXX important
+             nsCSSFrameConstructor::SetUpDocElementContainingBlock
+               nsCSSFrameConstructor::BeginBuildingScrollFrame
+                 nsCSSFrameConstructor::CreateAnonymousFrames
+                   nsCSSFrameConstructor::AddFrameConstructionItems
+                   nsCSSFrameConstructor::ConstructFramesFromItemList
+             nsCSSFrameConstructor::ConstructBlock
+               nsCSSFrameConstructor::ProcessChildren
+                 nsCSSFrameConstructor::ConstructFramesFromItemList
+                   nsCSSFrameConstructor::ConstructFramesFromItem
+                     nsCSSFrameConstructor::ConstructFrameFromItemInternal
+                       nsCSSFrameConstructor::ConstructScrollableBlock
+                         nsCSSFrameConstructor::ConstructBlock
+                           nsCSSFrameConstructor::ProcessChildren
+                             nsCSSFrameConstructor::ConstructFramesFromItemList
+                               nsCSSFrameConstructor::ConstructFramesFromItem
+                                 // much more following
